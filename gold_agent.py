@@ -32,6 +32,27 @@ def get_gold_price():
 
     # CASE 3: Something unexpected
     raise Exception(f"Unexpected API response: {data}")
+def get_silver_price():
+    url = "https://www.goldapi.io/api/XAG/INR"
+    headers = {
+        "x-access-token": GOLD_API_KEY,
+        "Content-Type": "application/json"
+    }
+
+    response = requests.get(url, headers=headers)
+    data = response.json()
+
+    # CASE 1: API gives price per gram
+    if "price_gram" in data:
+        return round(data["price_gram"], 2)
+
+    # CASE 2: API gives price per ounce
+    if "price" in data:
+        price_per_gram = data["price"] / 31.1035
+        return round(price_per_gram, 2)
+
+    raise Exception(f"Unexpected Silver API response: {data}")
+
 
 def send_whatsapp(message):
     client = Client(TWILIO_SID, TWILIO_AUTH)
@@ -104,7 +125,7 @@ def write_last_bias(bias):
 
 
 if __name__ == "__main__":
-    # --- PRICE ---
+    # --- PRICE (GOLD) ---
     base_price = get_gold_price()
 
     IMPORT_DUTY_RATE = 0.06
@@ -115,6 +136,17 @@ if __name__ == "__main__":
 
     final_indian_price = round(
         base_price + import_duty + bank_charge,
+        2
+    )
+
+    # --- PRICE (SILVER) ---
+    silver_base_price = get_silver_price()
+
+    silver_import_duty = silver_base_price * IMPORT_DUTY_RATE
+    silver_bank_charge = silver_base_price * BANK_CHARGE_RATE
+
+    final_silver_price = round(
+        silver_base_price + silver_import_duty + silver_bank_charge,
         2
     )
 
@@ -140,9 +172,10 @@ if __name__ == "__main__":
             "🚨 Gold AI Alert\n\n"
             "AI Bias Changed:\n"
             f"{last_bias} → {current_bias}\n\n"
+            f"Gold:   ₹ {final_indian_price} / gram\n"
+            f"Silver: ₹ {final_silver_price} / gram\n\n"
             "Key News:\n"
             f"{key_news}\n\n"
-            f"Price: ₹ {final_indian_price} / gram\n\n"
             f"Time: {time_now}\n\n"
             "- Gold AI Agent"
         )
