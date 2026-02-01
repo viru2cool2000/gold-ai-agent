@@ -185,6 +185,7 @@ if __name__ == "__main__":
 
     # --- NO CHANGE ---
     else:
-    send_whatsapp(
-        f"ℹ️ Gold Agent running.\nGold: ₹{final_indian_price}/g\nTime: {time_now}"
-    )
+    if datetime.now().hour == 9:
+        send_whatsapp(
+            f"ℹ️ Gold Agent running.\nGold: ₹{final_indian_price}/g\nTime: {time_now}"
+        )
