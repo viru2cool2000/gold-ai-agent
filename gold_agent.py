@@ -185,5 +185,6 @@ if __name__ == "__main__":
 
     # --- NO CHANGE ---
     else:
-        #print("No bias change. Silent run.")
-
+    send_whatsapp(
+        f"ℹ️ Gold Agent running.\nGold: ₹{final_indian_price}/g\nTime: {time_now}"
+    )
