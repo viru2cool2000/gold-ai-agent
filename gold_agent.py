@@ -63,14 +63,14 @@ from openai import OpenAI
 
 def ai_gold_bias(headlines):
     if not headlines:
-        return "No major news; gold bias neutral."
+        return "NEUTRAL"
 
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
     prompt = (
         "You are a commodities analyst. "
-        "Based on these headlines, give ONE short sentence "
-        "on gold price bias (bullish, bearish, or neutral).\n\n"
+        "Based on these headlines, decide gold price bias "
+        "(bullish, bearish, or neutral). Respond briefly.\n\n"
         + "\n".join(f"- {h}" for h in headlines)
     )
 
@@ -80,13 +80,35 @@ def ai_gold_bias(headlines):
         max_output_tokens=30
     )
 
-    return response.output_text.strip()
+    # Normalize AI output (THIS IS THE KEY PART)
+    text = response.output_text.lower()
+
+    if "bullish" in text:
+        return "BULLISH"
+    if "bearish" in text:
+        return "BEARISH"
+
+    return "NEUTRAL"
+
+def read_last_bias():
+    try:
+        with open("last_bias.txt", "r") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return None
+
+
+def write_last_bias(bias):
+    with open("last_bias.txt", "w") as f:
+        f.write(bias)
+
 
 if __name__ == "__main__":
+    # --- PRICE ---
     base_price = get_gold_price()
 
-    IMPORT_DUTY_RATE = 0.06      # 6%
-    BANK_CHARGE_RATE = 0.005     # 0.5%
+    IMPORT_DUTY_RATE = 0.06
+    BANK_CHARGE_RATE = 0.005
 
     import_duty = base_price * IMPORT_DUTY_RATE
     bank_charge = base_price * BANK_CHARGE_RATE
@@ -96,18 +118,38 @@ if __name__ == "__main__":
         2
     )
 
+    # --- NEWS + AI ---
     headlines = get_gold_relevant_news()
-    ai_insight = ai_gold_bias(headlines)
+    current_bias = ai_gold_bias(headlines)
+
+    # --- MEMORY ---
+    last_bias = read_last_bias()
 
     time_now = datetime.now().strftime("%d %b %Y | %I:%M %p")
 
-    message = (
-        "Gold Price Update (India)\n\n"
-        f"₹ {final_indian_price} per gram\n\n"
-        f"AI Insight: {ai_insight}\n\n"
-        f"Time: {time_now}\n\n"
-        "- Gold AI Agent"
-    )
+    # --- FIRST RUN ---
+    if last_bias is None:
+        write_last_bias(current_bias)
+        print("First run. Bias saved:", current_bias)
 
-    send_whatsapp(message)
+    # --- BIAS CHANGED ---
+    elif current_bias != last_bias:
+        key_news = "\n".join(f"• {h}" for h in headlines[:2])
 
+        message = (
+            "🚨 Gold AI Alert\n\n"
+            "AI Bias Changed:\n"
+            f"{last_bias} → {current_bias}\n\n"
+            "Key News:\n"
+            f"{key_news}\n\n"
+            f"Price: ₹ {final_indian_price} / gram\n\n"
+            f"Time: {time_now}\n\n"
+            "- Gold AI Agent"
+        )
+
+        send_whatsapp(message)
+        write_last_bias(current_bias)
+
+    # --- NO CHANGE ---
+    else:
+        print("No bias change. Silent run.")
