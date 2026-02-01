@@ -40,6 +40,47 @@ def send_whatsapp(message):
         from_=FROM_WHATSAPP,
         to=TO_WHATSAPP
     )
+import requests
+
+NEWS_API_KEY = os.environ.get("NEWS_API_KEY")
+
+def get_gold_relevant_news():
+    url = (
+        "https://newsapi.org/v2/top-headlines?"
+        "category=business&language=en&pageSize=5"
+    )
+    headers = {"X-Api-Key": NEWS_API_KEY}
+    r = requests.get(url, headers=headers, timeout=10)
+    data = r.json()
+
+    headlines = []
+    for a in data.get("articles", []):
+        title = a.get("title")
+        if title:
+            headlines.append(title)
+    return headlines
+from openai import OpenAI
+
+def ai_gold_bias(headlines):
+    if not headlines:
+        return "No major news; gold bias neutral."
+
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+    prompt = (
+        "You are a commodities analyst. "
+        "Based on these headlines, give ONE short sentence "
+        "on gold price bias (bullish, bearish, or neutral).\n\n"
+        + "\n".join(f"- {h}" for h in headlines)
+    )
+
+    response = client.responses.create(
+        model="gpt-4.1-mini",
+        input=prompt,
+        max_output_tokens=30
+    )
+
+    return response.output_text.strip()
 
 if __name__ == "__main__":
     base_price = get_gold_price()
@@ -55,13 +96,18 @@ if __name__ == "__main__":
         2
     )
 
+    headlines = get_gold_relevant_news()
+    ai_insight = ai_gold_bias(headlines)
+
     time_now = datetime.now().strftime("%d %b %Y | %I:%M %p")
 
     message = (
-    "Gold Price Update (India)\n\n"
-    f"₹ {final_indian_price} per gram\n\n"
-    f"Time: {time_now}\n\n"
-    "- Gold AI Agent"
-)
+        "Gold Price Update (India)\n\n"
+        f"₹ {final_indian_price} per gram\n\n"
+        f"AI Insight: {ai_insight}\n\n"
+        f"Time: {time_now}\n\n"
+        "- Gold AI Agent"
+    )
 
     send_whatsapp(message)
+
