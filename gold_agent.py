@@ -116,15 +116,20 @@ if __name__ == "__main__":
 
     headlines = get_gold_relevant_news()
     bias = ai_gold_bias(headlines)
+    
+    news_text = "• " + "\n• ".join(headlines[:2]) if headlines else "No major gold-related news."
 
     time_now = datetime.now().strftime("%d %b %Y | %I:%M %p")
 
     message = (
-        "🟡 Gold Market Update\n\n"
-        f"Gold: ₹{gold_price} / g\n"
-        f"Silver: ₹{silver_price} / g\n\n"
-        f"AI Bias: {bias}\n\n"
-        f"Time: {time_now}"
-    )
+    "🟡 Gold Market Update\n\n"
+    f"Gold: ₹{gold_price} / g\n"
+    f"Silver: ₹{silver_price} / g\n\n"
+    f"AI Bias: {bias}\n\n"
+    "📰 News Highlights:\n"
+    f"{news_text}\n\n"
+    f"Time: {time_now}"
+)
 
     send_whatsapp(message)
+
