@@ -160,33 +160,47 @@ if __name__ == "__main__":
     time_now = datetime.now().strftime("%d %b %Y | %I:%M %p")
 
     # --- FIRST RUN ---
-    if last_bias is None:
-        write_last_bias(current_bias)
-        print("First run. Bias saved:", current_bias)
+if last_bias is None:
+    write_last_bias(current_bias)
+    write_last_price(final_indian_price)
 
-    # --- BIAS CHANGED ---
-    elif current_bias != last_bias:
-        key_news = "\n".join(f"• {h}" for h in headlines[:2])
-
-        message = (
-            "🚨 Gold AI Alert\n\n"
-            "AI Bias Changed:\n"
-            f"{last_bias} → {current_bias}\n\n"
-            f"Gold:   ₹ {final_indian_price} / gram\n"
-            f"Silver: ₹ {final_silver_price} / gram\n\n"
-            "Key News:\n"
-            f"{key_news}\n\n"
-            f"Time: {time_now}\n\n"
-            "- Gold AI Agent"
-        )
-
-        send_whatsapp(message)
-        write_last_bias(current_bias)
-
-    # --- NO CHANGE ---
-    else:
     send_whatsapp(
-        f"ℹ️ Gold Agent Update\n\n"
+        f"ℹ️ Gold Agent Started\n\n"
+        f"Gold: ₹{final_indian_price} / g\n"
+        f"Silver: ₹{final_silver_price} / g\n\n"
+        f"Time: {time_now}"
+    )
+
+# --- BIAS CHANGE ---
+elif current_bias != last_bias:
+    send_whatsapp(
+        f"🚨 Gold AI Bias Change\n\n"
+        f"{last_bias} → {current_bias}\n\n"
+        f"Gold: ₹{final_indian_price} / g\n"
+        f"Silver: ₹{final_silver_price} / g\n\n"
+        f"Time: {time_now}"
+    )
+    write_last_bias(current_bias)
+    write_last_price(final_indian_price)
+
+# --- PRICE SHOCK ---
+elif price_change_pct is not None and abs(price_change_pct) >= PRICE_SHOCK_THRESHOLD:
+    direction = "⬇️ FALL" if price_change_pct < 0 else "⬆️ RISE"
+    pct = round(price_change_pct * 100, 2)
+
+    send_whatsapp(
+        f"🚨 Gold Price Alert\n\n"
+        f"{direction} {pct}%\n\n"
+        f"Gold: ₹{final_indian_price} / g\n"
+        f"Silver: ₹{final_silver_price} / g\n\n"
+        f"Time: {time_now}"
+    )
+    write_last_price(final_indian_price)
+
+# --- EVERY RUN UPDATE ---
+else:
+    send_whatsapp(
+        f"ℹ️ Gold Update\n\n"
         f"Gold: ₹{final_indian_price} / g\n"
         f"Silver: ₹{final_silver_price} / g\n\n"
         f"Time: {time_now}"
