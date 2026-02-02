@@ -119,7 +119,10 @@ if __name__ == "__main__":
     
     news_text = "• " + "\n• ".join(headlines[:2]) if headlines else "No major gold-related news."
 
-    time_now = datetime.now().strftime("%d %b %Y | %I:%M %p")
+    from datetime import datetime, timezone, timedelta
+
+    IST = timezone(timedelta(hours=5, minutes=30))
+    time_now = datetime.now(IST).strftime("%d %b %Y | %I:%M %p")
 
     message = (
     "🟡 Gold Market Update\n\n"
@@ -132,4 +135,5 @@ if __name__ == "__main__":
 )
 
     send_whatsapp(message)
+
 
