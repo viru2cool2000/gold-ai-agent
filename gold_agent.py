@@ -192,14 +192,17 @@ def ai_gold_analysis(headlines):
 # ===== MAIN =====
 if __name__ == "__main__":
     gold_base = get_gold_price()
-    silver_base = get_silver_price()
+silver_base = get_silver_price()
 
-    IMPORT_DUTY = 0.06
-    BANK_CHARGE = 0.005
-
+if gold_base is not None:
     gold_price = round(gold_base * (1 + IMPORT_DUTY + BANK_CHARGE), 2)
-    silver_price = round(silver_base * (1 + IMPORT_DUTY + BANK_CHARGE), 2)
+else:
+    gold_price = "N/A"
 
+if silver_base is not None:
+    silver_price = round(silver_base * (1 + IMPORT_DUTY + BANK_CHARGE), 2)
+else:
+    silver_price = "N/A"
     headlines = get_gold_relevant_news()
     analysis = ai_gold_analysis(headlines)
 
@@ -221,5 +224,6 @@ if __name__ == "__main__":
     )
 
     send_whatsapp(message)
+
 
 
