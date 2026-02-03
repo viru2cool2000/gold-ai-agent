@@ -10,6 +10,7 @@ NEWS_API_KEY = os.environ.get("NEWS_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 TWILIO_SID = os.environ.get("TWILIO_SID")
 TWILIO_AUTH = os.environ.get("TWILIO_AUTH")
+AGENT_NAME = "Viru AI"
 
 FROM_WHATSAPP = "whatsapp:+14155238886"
 TO_WHATSAPP = "whatsapp:+919972700255"
@@ -77,14 +78,28 @@ def get_gold_relevant_news():
     r = requests.get(url, headers=headers, timeout=10)
     data = r.json()
 
-    headlines = []
+    macro_news = []
+    fallback_news = []
+
     for a in data.get("articles", []):
         title = a.get("title", "")
+        if not title:
+            continue
+
+        fallback_news.append(title)
+
         if any(k.lower() in title.lower() for k in MACRO_KEYWORDS):
-            headlines.append(title)
+            macro_news.append(title)
 
-    return headlines[:3]
-
+    # Priority:
+    # 1️⃣ Gold / macro news
+    # 2️⃣ Otherwise at least ONE business headline
+    if macro_news:
+        return macro_news[:2]
+    elif fallback_news:
+        return [fallback_news[0]]
+    else:
+        return ["Markets await fresh economic cues; gold trades in a narrow range."]
 def ai_gold_analysis(headlines):
     if not headlines:
         return {
@@ -133,8 +148,7 @@ def ai_gold_analysis(headlines):
 
     return {
         "bias": bias,
-        "confidence": confidence_map[bias],
-        "horizon": "Short-term (1–7 days)"
+        "confidence": confidence_map[bias]
     }
 
 
@@ -152,26 +166,26 @@ if __name__ == "__main__":
     headlines = get_gold_relevant_news()
     analysis = ai_gold_analysis(headlines)
     
-    news_text = "• " + "\n• ".join(headlines[:2]) if headlines else "No major gold-related news."
-
+    news_text = "• " + "\n• ".join(headlines[:2])
     from datetime import datetime, timezone, timedelta
 
     IST = timezone(timedelta(hours=5, minutes=30))
     time_now = datetime.now(IST).strftime("%d %b %Y | %I:%M %p")
 
     message = (
-    "🟡 Gold Market Update\n\n"
+    "🤖 Viru AI\n"
+    "🟡 Gold Rate Update\n\n"
     f"Gold: ₹{gold_price} / g\n"
     f"Silver: ₹{silver_price} / g\n\n"
     f"AI Bias: {analysis['bias']}\n"
     f"Confidence: {analysis['confidence']}\n"
-    f"Impact Horizon: {analysis['horizon']}\n"
     "📰 News Highlights:\n"
     f"{news_text}\n\n"
     f"Time: {time_now}"
 )
 
     send_whatsapp(message)
+
 
 
 
