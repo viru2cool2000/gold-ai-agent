@@ -163,13 +163,16 @@ if __name__ == "__main__":
     "🟡 Gold Market Update\n\n"
     f"Gold: ₹{gold_price} / g\n"
     f"Silver: ₹{silver_price} / g\n\n"
-    f"AI Bias: {bias}\n\n"
+    f"AI Bias: {analysis['bias']}\n"
+    f"Confidence: {analysis['confidence']}\n"
+    f"Impact Horizon: {analysis['horizon']}\n"
     "📰 News Highlights:\n"
     f"{news_text}\n\n"
     f"Time: {time_now}"
 )
 
     send_whatsapp(message)
+
 
 
 
