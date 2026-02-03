@@ -150,7 +150,7 @@ if __name__ == "__main__":
     silver_price = round(silver_base * (1 + IMPORT_DUTY + BANK_CHARGE), 2)
 
     headlines = get_gold_relevant_news()
-    bias = ai_gold_bias(headlines)
+    analysis = ai_gold_analysis(headlines)
     
     news_text = "• " + "\n• ".join(headlines[:2]) if headlines else "No major gold-related news."
 
@@ -170,6 +170,7 @@ if __name__ == "__main__":
 )
 
     send_whatsapp(message)
+
 
 
 
