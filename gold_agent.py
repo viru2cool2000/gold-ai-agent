@@ -1,5 +1,5 @@
 import requests
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from twilio.rest import Client
 import os
 from openai import OpenAI
@@ -10,11 +10,11 @@ NEWS_API_KEY = os.environ.get("NEWS_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 TWILIO_SID = os.environ.get("TWILIO_SID")
 TWILIO_AUTH = os.environ.get("TWILIO_AUTH")
+
 AGENT_NAME = "Viru AI"
 
 FROM_WHATSAPP = "whatsapp:+14155238886"
 TO_WHATSAPP = "whatsapp:+919972700255"
-
 
 # ===== PRICE FUNCTIONS =====
 def get_gold_price():
@@ -23,7 +23,7 @@ def get_gold_price():
         "x-access-token": GOLD_API_KEY,
         "Content-Type": "application/json"
     }
-    r = requests.get(url, headers=headers)
+    r = requests.get(url, headers=headers, timeout=10)
     data = r.json()
 
     if "price_gram_24k" in data:
@@ -41,7 +41,7 @@ def get_silver_price():
         "x-access-token": GOLD_API_KEY,
         "Content-Type": "application/json"
     }
-    r = requests.get(url, headers=headers)
+    r = requests.get(url, headers=headers, timeout=10)
     data = r.json()
 
     if "price_gram" in data:
@@ -52,7 +52,6 @@ def get_silver_price():
 
     raise Exception(data)
 
-
 # ===== WHATSAPP =====
 def send_whatsapp(message):
     client = Client(TWILIO_SID, TWILIO_AUTH)
@@ -62,7 +61,7 @@ def send_whatsapp(message):
         to=TO_WHATSAPP
     )
 
-# ===== NEWS + AI =====
+# ===== NEWS =====
 MACRO_KEYWORDS = [
     "gold", "silver", "inflation", "interest rate", "fed",
     "dollar", "usd", "trade deal", "tariff", "us india",
@@ -91,21 +90,19 @@ def get_gold_relevant_news():
         if any(k.lower() in title.lower() for k in MACRO_KEYWORDS):
             macro_news.append(title)
 
-    # Priority:
-    # 1️⃣ Gold / macro news
-    # 2️⃣ Otherwise at least ONE business headline
     if macro_news:
         return macro_news[:2]
     elif fallback_news:
         return [fallback_news[0]]
     else:
         return ["Markets await fresh economic cues; gold trades in a narrow range."]
+
+# ===== AI ANALYSIS =====
 def ai_gold_analysis(headlines):
-    if not headlines:
+    if not OPENAI_API_KEY:
         return {
             "bias": "NEUTRAL",
-            "confidence": 0.50,
-            "horizon": "Short-term (1–7 days)"
+            "confidence": 0.50
         }
 
     client = OpenAI(api_key=OPENAI_API_KEY)
@@ -126,69 +123,4 @@ def ai_gold_analysis(headlines):
 
     text = response.output_text.lower()
 
-    if "slightly bearish" in text:
-        bias = "SLIGHTLY BEARISH"
-    elif "bearish" in text:
-        bias = "BEARISH"
-    elif "slightly bullish" in text:
-        bias = "SLIGHTLY BULLISH"
-    elif "bullish" in text:
-        bias = "BULLISH"
-    else:
-        bias = "NEUTRAL"
-
-    # Confidence mapping (OLD STYLE – STABLE)
-    confidence_map = {
-        "BULLISH": 0.70,
-        "BEARISH": 0.70,
-        "SLIGHTLY BULLISH": 0.60,
-        "SLIGHTLY BEARISH": 0.60,
-        "NEUTRAL": 0.50
-    }
-
-    return {
-        "bias": bias,
-        "confidence": confidence_map[bias]
-    }
-
-
-# ===== MAIN =====
-if __name__ == "__main__":
-    gold_base = get_gold_price()
-    silver_base = get_silver_price()
-
-    IMPORT_DUTY = 0.06
-    BANK_CHARGE = 0.005
-
-    gold_price = round(gold_base * (1 + IMPORT_DUTY + BANK_CHARGE), 2)
-    silver_price = round(silver_base * (1 + IMPORT_DUTY + BANK_CHARGE), 2)
-
-    headlines = get_gold_relevant_news()
-    analysis = ai_gold_analysis(headlines)
-    
-    news_text = "• " + "\n• ".join(headlines[:2])
-    from datetime import datetime, timezone, timedelta
-
-    IST = timezone(timedelta(hours=5, minutes=30))
-    time_now = datetime.now(IST).strftime("%d %b %Y | %I:%M %p")
-
-    message = (
-    "🤖 Viru AI\n"
-    "🟡 Gold Rate Update\n\n"
-    f"Gold: ₹{gold_price} / g\n"
-    f"Silver: ₹{silver_price} / g\n\n"
-    f"AI Bias: {analysis['bias']}\n"
-    f"Confidence: {analysis['confidence']}\n"
-    "📰 News Highlights:\n"
-    f"{news_text}\n\n"
-    f"Time: {time_now}"
-)
-
-    send_whatsapp(message)
-
-
-
-
-
-
-
+    if "slightly bearish" in text
