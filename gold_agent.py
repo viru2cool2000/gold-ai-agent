@@ -85,7 +85,6 @@ def get_gold_relevant_news():
 
     return headlines[:3]
 
-def ai_gold_bias(headlines):
 def ai_gold_analysis(headlines):
     if not headlines:
         return {
@@ -171,6 +170,7 @@ if __name__ == "__main__":
 )
 
     send_whatsapp(message)
+
 
 
 
