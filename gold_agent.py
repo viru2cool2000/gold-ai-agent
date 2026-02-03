@@ -61,46 +61,82 @@ def send_whatsapp(message):
         to=TO_WHATSAPP
     )
 
-
 # ===== NEWS + AI =====
+MACRO_KEYWORDS = [
+    "gold", "silver", "inflation", "interest rate", "fed",
+    "dollar", "usd", "trade deal", "tariff", "us india",
+    "geopolitical", "economy", "recession"
+]
+
 def get_gold_relevant_news():
     url = (
         "https://newsapi.org/v2/top-headlines?"
-        "category=business&language=en&pageSize=5"
+        "category=business&language=en&pageSize=10"
     )
     headers = {"X-Api-Key": NEWS_API_KEY}
     r = requests.get(url, headers=headers, timeout=10)
     data = r.json()
 
-    return [a["title"] for a in data.get("articles", []) if a.get("title")]
+    headlines = []
+    for a in data.get("articles", []):
+        title = a.get("title", "")
+        if any(k.lower() in title.lower() for k in MACRO_KEYWORDS):
+            headlines.append(title)
 
+    return headlines[:3]
 
 def ai_gold_bias(headlines):
+def ai_gold_analysis(headlines):
     if not headlines:
-        return "NEUTRAL"
+        return {
+            "bias": "NEUTRAL",
+            "confidence": 0.50,
+            "horizon": "Short-term (1–7 days)"
+        }
 
     client = OpenAI(api_key=OPENAI_API_KEY)
 
     prompt = (
-        "You are a commodities analyst. "
-        "Based on these headlines, decide gold price bias "
-        "(bullish, bearish, or neutral). Respond briefly.\n\n"
+        "You are a gold market analyst.\n"
+        "Based on the headlines below, decide gold bias:\n"
+        "Bullish, Slightly Bullish, Neutral, Slightly Bearish, or Bearish.\n\n"
+        "Respond ONLY with the bias word.\n\n"
         + "\n".join(f"- {h}" for h in headlines)
     )
 
     response = client.responses.create(
         model="gpt-4.1-mini",
         input=prompt,
-        max_output_tokens=30
+        max_output_tokens=20
     )
 
     text = response.output_text.lower()
 
-    if "bullish" in text:
-        return "BULLISH"
-    if "bearish" in text:
-        return "BEARISH"
-    return "NEUTRAL"
+    if "slightly bearish" in text:
+        bias = "SLIGHTLY BEARISH"
+    elif "bearish" in text:
+        bias = "BEARISH"
+    elif "slightly bullish" in text:
+        bias = "SLIGHTLY BULLISH"
+    elif "bullish" in text:
+        bias = "BULLISH"
+    else:
+        bias = "NEUTRAL"
+
+    # Confidence mapping (OLD STYLE – STABLE)
+    confidence_map = {
+        "BULLISH": 0.70,
+        "BEARISH": 0.70,
+        "SLIGHTLY BULLISH": 0.60,
+        "SLIGHTLY BEARISH": 0.60,
+        "NEUTRAL": 0.50
+    }
+
+    return {
+        "bias": bias,
+        "confidence": confidence_map[bias],
+        "horizon": "Short-term (1–7 days)"
+    }
 
 
 # ===== MAIN =====
@@ -135,5 +171,6 @@ if __name__ == "__main__":
 )
 
     send_whatsapp(message)
+
 
 
