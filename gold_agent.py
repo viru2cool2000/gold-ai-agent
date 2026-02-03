@@ -123,4 +123,59 @@ def ai_gold_analysis(headlines):
 
     text = response.output_text.lower()
 
-    if "slightly bearish" in text
+    if "slightly bearish" in text:
+        bias = "SLIGHTLY BEARISH"
+    elif "bearish" in text:
+        bias = "BEARISH"
+    elif "slightly bullish" in text:
+        bias = "SLIGHTLY BULLISH"
+    elif "bullish" in text:
+        bias = "BULLISH"
+    else:
+        bias = "NEUTRAL"
+
+    confidence_map = {
+        "BULLISH": 0.70,
+        "BEARISH": 0.70,
+        "SLIGHTLY BULLISH": 0.60,
+        "SLIGHTLY BEARISH": 0.60,
+        "NEUTRAL": 0.50
+    }
+
+    return {
+        "bias": bias,
+        "confidence": confidence_map[bias]
+    }
+
+# ===== MAIN =====
+if __name__ == "__main__":
+    gold_base = get_gold_price()
+    silver_base = get_silver_price()
+
+    IMPORT_DUTY = 0.06
+    BANK_CHARGE = 0.005
+
+    gold_price = round(gold_base * (1 + IMPORT_DUTY + BANK_CHARGE), 2)
+    silver_price = round(silver_base * (1 + IMPORT_DUTY + BANK_CHARGE), 2)
+
+    headlines = get_gold_relevant_news()
+    analysis = ai_gold_analysis(headlines)
+
+    news_text = "• " + "\n• ".join(headlines[:2])
+
+    IST = timezone(timedelta(hours=5, minutes=30))
+    time_now = datetime.now(IST).strftime("%d %b %Y | %I:%M %p")
+
+    message = (
+        "🤖 Viru AI\n"
+        "🟡 Gold Rate Update\n\n"
+        f"Gold: ₹{gold_price} / g\n"
+        f"Silver: ₹{silver_price} / g\n\n"
+        f"AI Bias: {analysis['bias']}\n"
+        f"Confidence: {analysis['confidence']}\n\n"
+        "📰 News Highlights:\n"
+        f"{news_text}\n\n"
+        f"⏰ Time: {time_now}"
+    )
+
+    send_whatsapp(message)
