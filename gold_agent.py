@@ -41,16 +41,41 @@ def get_silver_price():
         "x-access-token": GOLD_API_KEY,
         "Content-Type": "application/json"
     }
-    r = requests.get(url, headers=headers, timeout=10)
-    data = r.json()
 
-    if "price_gram" in data:
-        return round(data["price_gram"], 2)
+    try:
+        r = requests.get(url, headers=headers, timeout=10)
+        data = r.json()
 
-    if "price" in data:
-        return round(data["price"] / 31.1035, 2)
+        if "price_gram" in data:
+            return round(data["price_gram"], 2)
 
-    raise Exception(data)
+        if "price" in data:
+            return round(data["price"] / 31.1035, 2)
+
+    except:
+        pass
+
+    # 🔁 Fallback to free API
+    return get_silver_price_fallback()
+def get_silver_price_fallback():
+    try:
+        url = "https://api.metals.live/v1/spot"
+        r = requests.get(url, timeout=10)
+        data = r.json()
+
+        # data example: [["silver", 23.45], ["gold", 2034.1]]
+        for item in data:
+            if item[0].lower() == "silver":
+                # Convert USD/oz → INR/gram approx
+                usd_per_oz = item[1]
+                usd_to_inr = 83  # approx rate, acceptable for fallback
+                return round((usd_per_oz * usd_to_inr) / 31.1035, 2)
+    except:
+        pass
+
+    return None
+
+
 
 # ===== WHATSAPP =====
 def send_whatsapp(message):
@@ -179,3 +204,4 @@ if __name__ == "__main__":
     )
 
     send_whatsapp(message)
+
