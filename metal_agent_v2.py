@@ -254,7 +254,6 @@ def whatsapp_snapshot(prices):
         LAST_SNAPSHOT_TIME = now
 
 # RUNNER
-send_whatsapp("✅ Gold AI Agent: WhatsApp integration successful!")
 def run_agent():
     while True:
         try:
@@ -299,3 +298,4 @@ if __name__ == "__main__":
         run_once()
     else:
         run_agent()
+
