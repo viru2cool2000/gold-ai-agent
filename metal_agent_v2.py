@@ -285,8 +285,17 @@ def run_agent():
 
 
 
+def run_once():
+    prices, fx = fetch_all_prices()
+    process_alerts(prices)
+    whatsapp_snapshot(prices)
 # -------------------------------
 # START
 # -------------------------------
 if __name__ == "__main__":
-    run_agent()
+    import sys
+
+    if "--once" in sys.argv:
+        run_once()
+    else:
+        run_agent()
