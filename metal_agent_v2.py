@@ -41,24 +41,45 @@ BLOCKED_KEYWORDS = [
 # ==============================
 # PRICE FUNCTIONS
 # ==============================
+# ==============================
+# PRICE FUNCTIONS (FREE API)
+# ==============================
 def get_gold_silver():
-    try:
-        url = "https://www.goldapi.io/api/XAU/INR"
-        headers = {"x-access-token": GOLD_API_KEY}
-        res = requests.get(url, headers=headers, timeout=10)
-        data = res.json()
-        gold_price = round(data["price"] / 31.1035, 2)
-    except:
-        gold_price = "N/A"
+    gold_price = "N/A"
+    silver_price = "N/A"
+    usd_inr = None
 
+    # Get USD/INR first
     try:
-        url = "https://www.goldapi.io/api/XAG/INR"
-        headers = {"x-access-token": GOLD_API_KEY}
-        res = requests.get(url, headers=headers, timeout=10)
-        data = res.json()
-        silver_price = round(data["price"] / 31.1035, 2)
+        fx = requests.get(
+            "https://api.exchangerate.host/latest?base=USD&symbols=INR",
+            timeout=10
+        ).json()
+        usd_inr = fx["rates"]["INR"]
     except:
-        silver_price = "N/A"
+        pass
+
+    # Get gold price (USD/oz)
+    try:
+        res = requests.get("https://api.gold-api.com/price/XAU", timeout=10)
+        data = res.json()
+        gold_usd_per_oz = data["price"]
+
+        if usd_inr:
+            gold_price = round((gold_usd_per_oz * usd_inr) / 31.1035, 2)
+    except:
+        pass
+
+    # Get silver price (USD/oz)
+    try:
+        res = requests.get("https://api.gold-api.com/price/XAG", timeout=10)
+        data = res.json()
+        silver_usd_per_oz = data["price"]
+
+        if usd_inr:
+            silver_price = round((silver_usd_per_oz * usd_inr) / 31.1035, 2)
+    except:
+        pass
 
     return gold_price, silver_price
 
@@ -162,4 +183,5 @@ USD/INR: ₹{usd_inr}
 
 if __name__ == "__main__":
     main()
+
 
