@@ -121,13 +121,17 @@ def get_market_news():
 # ==============================
 def send_whatsapp(message):
     try:
+        print("TWILIO SID:", TWILIO_SID)
+        print("FROM:", TWILIO_FROM)
+        print("TO:", TWILIO_TO)
+
         client = Client(TWILIO_SID, TWILIO_TOKEN)
-        client.messages.create(
+        msg = client.messages.create(
             body=message,
             from_=TWILIO_FROM,
             to=TWILIO_TO
         )
-        print("Message sent")
+        print("Message SID:", msg.sid)
     except Exception as e:
         print("WhatsApp error:", e)
 
@@ -160,3 +164,4 @@ USD/INR: ₹{usd_inr}
 
 if __name__ == "__main__":
     main()
+
