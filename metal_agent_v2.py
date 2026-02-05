@@ -11,8 +11,12 @@ NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
 TWILIO_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-TWILIO_FROM = os.getenv("TWILIO_WHATSAPP_FROM")
-TWILIO_TO = os.getenv("TWILIO_WHATSAPP_TO")
+
+# ==============================
+# HARD-CODED WHATSAPP NUMBERS
+# ==============================
+TWILIO_FROM = "whatsapp:+14155238886"   # Twilio sandbox number
+TWILIO_TO = "whatsapp:+91XXXXXXXXXX"    # ← replace with your real number
 
 # ==============================
 # NEWS FILTER SETTINGS
@@ -39,22 +43,20 @@ BLOCKED_KEYWORDS = [
 # ==============================
 def get_gold_silver():
     try:
-        url = f"https://www.goldapi.io/api/XAU/INR"
+        url = "https://www.goldapi.io/api/XAU/INR"
         headers = {"x-access-token": GOLD_API_KEY}
         res = requests.get(url, headers=headers, timeout=10)
         data = res.json()
-
-        gold_price = round(data["price"] / 31.1035, 2)  # per gram
+        gold_price = round(data["price"] / 31.1035, 2)
     except:
         gold_price = "N/A"
 
     try:
-        url = f"https://www.goldapi.io/api/XAG/INR"
+        url = "https://www.goldapi.io/api/XAG/INR"
         headers = {"x-access-token": GOLD_API_KEY}
         res = requests.get(url, headers=headers, timeout=10)
         data = res.json()
-
-        silver_price = round(data["price"] / 31.1035, 2)  # per gram
+        silver_price = round(data["price"] / 31.1035, 2)
     except:
         silver_price = "N/A"
 
@@ -121,10 +123,6 @@ def get_market_news():
 # ==============================
 def send_whatsapp(message):
     try:
-        print("TWILIO SID:", TWILIO_SID)
-        print("FROM:", TWILIO_FROM)
-        print("TO:", TWILIO_TO)
-
         client = Client(TWILIO_SID, TWILIO_TOKEN)
         msg = client.messages.create(
             body=message,
@@ -164,4 +162,3 @@ USD/INR: ₹{usd_inr}
 
 if __name__ == "__main__":
     main()
-
