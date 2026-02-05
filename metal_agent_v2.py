@@ -16,7 +16,7 @@ TWILIO_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 # HARD-CODED WHATSAPP NUMBERS
 # ==============================
 TWILIO_FROM = "whatsapp:+14155238886"   # Twilio sandbox number
-TWILIO_TO = "whatsapp:+91XXXXXXXXXX"    # ← replace with your real number
+TWILIO_TO = "whatsapp:+919972700255"    # ← replace with your real number
 
 # ==============================
 # NEWS FILTER SETTINGS
@@ -162,3 +162,4 @@ USD/INR: ₹{usd_inr}
 
 if __name__ == "__main__":
     main()
+
