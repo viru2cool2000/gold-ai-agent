@@ -2,7 +2,7 @@ name: Metal Agent Hourly Run
 
 on:
   schedule:
-    - cron: "0 * * * *"   # every 1 hour
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 jobs:
