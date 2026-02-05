@@ -6,7 +6,6 @@ from twilio.rest import Client
 # ==============================
 # API KEYS
 # ==============================
-GOLD_API_KEY = os.getenv("GOLD_API_KEY")
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
 TWILIO_SID = os.getenv("TWILIO_ACCOUNT_SID")
@@ -15,8 +14,8 @@ TWILIO_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 # ==============================
 # HARD-CODED WHATSAPP NUMBERS
 # ==============================
-TWILIO_FROM = "whatsapp:+14155238886"   # Twilio sandbox number
-TWILIO_TO = "whatsapp:+919972700255"    # ← replace with your real number
+TWILIO_FROM = "whatsapp:+14155238886"
+TWILIO_TO = "whatsapp:+919972700255"
 
 # ==============================
 # NEWS FILTER SETTINGS
@@ -39,17 +38,14 @@ BLOCKED_KEYWORDS = [
 ]
 
 # ==============================
-# PRICE FUNCTIONS
-# ==============================
-# ==============================
-# PRICE FUNCTIONS (FREE API)
+# PRICE FUNCTIONS (ONLY GOLD-API)
 # ==============================
 def get_gold_silver():
     gold_price = "N/A"
     silver_price = "N/A"
     usd_inr = None
 
-    # Get USD/INR first
+    # Get USD/INR
     try:
         fx = requests.get(
             "https://api.exchangerate.host/latest?base=USD&symbols=INR",
@@ -59,7 +55,7 @@ def get_gold_silver():
     except:
         pass
 
-    # Get gold price (USD/oz)
+    # Gold price
     try:
         res = requests.get("https://api.gold-api.com/price/XAU", timeout=10)
         data = res.json()
@@ -70,7 +66,7 @@ def get_gold_silver():
     except:
         pass
 
-    # Get silver price (USD/oz)
+    # Silver price
     try:
         res = requests.get("https://api.gold-api.com/price/XAG", timeout=10)
         data = res.json()
@@ -81,17 +77,7 @@ def get_gold_silver():
     except:
         pass
 
-    return gold_price, silver_price
-
-
-def get_usd_inr():
-    try:
-        url = "https://api.exchangerate.host/latest?base=USD&symbols=INR"
-        res = requests.get(url, timeout=10)
-        data = res.json()
-        return round(data["rates"]["INR"], 2)
-    except:
-        return "N/A"
+    return gold_price, silver_price, usd_inr
 
 
 # ==============================
@@ -159,9 +145,13 @@ def send_whatsapp(message):
 # MAIN FUNCTION
 # ==============================
 def main():
-    gold, silver = get_gold_silver()
-    usd_inr = get_usd_inr()
+    gold, silver, usd_inr = get_gold_silver()
     news = get_market_news()
+
+    if usd_inr:
+        usd_inr_display = round(usd_inr, 2)
+    else:
+        usd_inr_display = "N/A"
 
     now = datetime.now().strftime("%d %b %Y | %I:%M %p")
 
@@ -170,7 +160,7 @@ def main():
 
 Gold: ₹{gold} / g
 Silver: ₹{silver} / g
-USD/INR: ₹{usd_inr}
+USD/INR: ₹{usd_inr_display}
 
 📰 Economic News:
 {news}
@@ -183,5 +173,3 @@ USD/INR: ₹{usd_inr}
 
 if __name__ == "__main__":
     main()
-
-
