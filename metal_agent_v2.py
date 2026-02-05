@@ -45,7 +45,14 @@ def get_gold_silver():
     silver_price = "N/A"
     usd_inr = None
 
-    # Get USD/INR (working free API)
+    # India retail markup
+    IMPORT_DUTY = 1.06
+    BANK_CHARGE = 1.005
+    GST = 1.03
+
+    TOTAL_MARKUP = IMPORT_DUTY * BANK_CHARGE * GST
+
+    # Get USD/INR
     try:
         fx = requests.get(
             "https://api.exchangerate-api.com/v4/latest/USD",
@@ -62,7 +69,8 @@ def get_gold_silver():
         gold_usd_per_oz = data["price"]
 
         if usd_inr:
-            gold_price = round((gold_usd_per_oz * usd_inr) / 31.1035, 2)
+            base_gold = (gold_usd_per_oz * usd_inr) / 31.1035
+            gold_price = round(base_gold * TOTAL_MARKUP, 2)
     except:
         pass
 
@@ -73,7 +81,8 @@ def get_gold_silver():
         silver_usd_per_oz = data["price"]
 
         if usd_inr:
-            silver_price = round((silver_usd_per_oz * usd_inr) / 31.1035, 2)
+            base_silver = (silver_usd_per_oz * usd_inr) / 31.1035
+            silver_price = round(base_silver * TOTAL_MARKUP, 2)
     except:
         pass
 
@@ -172,4 +181,5 @@ USD/INR: ₹{usd_inr_display}
 
 if __name__ == "__main__":
     main()
+
 
