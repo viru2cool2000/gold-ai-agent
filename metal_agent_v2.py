@@ -19,8 +19,8 @@ METAL_API = "https://api.gold-api.com/price"
 # -------------------------------
 # WHATSAPP (TWILIO)
 # -------------------------------
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_ACCOUNT_SID = "AC6d657d2ade6b37954d9d988173427ff0"
+TWILIO_AUTH_TOKEN = "77e365e12011665c1383653a2ca277b4"
 
 # Hardcoded sandbox numbers (temporary)
 FROM_WHATSAPP = "whatsapp:+14155238886"
@@ -82,3 +82,4 @@ def run_once():
 # -------------------------------
 if __name__ == "__main__":
     run_once()
+
