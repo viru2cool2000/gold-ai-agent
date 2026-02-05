@@ -2,7 +2,7 @@ from twilio.rest import Client
 
 # 🔴 PASTE YOUR REAL TWILIO CREDENTIALS HERE
 TWILIO_ACCOUNT_SID = "AC6d657d2ade6b37954d9d988173427ff0"
-TWILIO_AUTH_TOKEN = "77e365e12011665c1383653a2ca277b4"
+TWILIO_AUTH_TOKEN = "1583db23a672377bc3826f3453f990b4"
 
 # Twilio WhatsApp sandbox
 FROM_WHATSAPP = "whatsapp:+14155238886"
@@ -26,3 +26,4 @@ def test_whatsapp():
 
 if __name__ == "__main__":
     test_whatsapp()
+
