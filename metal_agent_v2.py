@@ -1,199 +1,162 @@
-import os
 import requests
-import time
+import os
 from datetime import datetime
 from twilio.rest import Client
 
-# -------------------------------
-# CONFIG
-# -------------------------------
-METALS = {
-    "Gold": "XAU",
-    "Silver": "XAG",
-    "Platinum": "XPT",
-    "Palladium": "XPD"
-}
-
-FX_API = "https://open.er-api.com/v6/latest/USD"
-METAL_API = "https://api.gold-api.com/price"
-
-TROY_OUNCE_TO_GRAM = 31.1035
-INDIA_LANDED_FACTOR = 1.065
-
-# -------------------------------
-# WHATSAPP (TWILIO)
-# -------------------------------
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-
-FROM_WHATSAPP = "whatsapp:+14155238886"
-TO_WHATSAPP = "whatsapp:+919972700255"
-
-twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-
-# -------------------------------
-# ALERT CONFIG
-# -------------------------------
-THRESHOLD_METALS = ["Gold", "Silver"]
-PRICE_CHANGE_THRESHOLD = 50
-LAST_PRICES = {}
-
-# -------------------------------
-# NEWS
-# -------------------------------
+# ==============================
+# API KEYS
+# ==============================
+GOLD_API_KEY = os.getenv("GOLD_API_KEY")
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+
+TWILIO_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_FROM = os.getenv("TWILIO_WHATSAPP_FROM")
+TWILIO_TO = os.getenv("TWILIO_WHATSAPP_TO")
+
+# ==============================
+# NEWS FILTER SETTINGS
+# ==============================
+ALLOWED_KEYWORDS = [
+    "gold", "silver", "bullion", "precious",
+    "usd", "dollar", "rupee", "inr",
+    "inflation", "interest rate", "fed",
+    "federal reserve", "rbi", "central bank",
+    "economy", "recession", "bond",
+    "treasury", "geopolitical", "oil"
+]
+
+BLOCKED_KEYWORDS = [
+    "router", "wifi", "iphone", "android",
+    "gaming", "crypto", "bitcoin", "ai",
+    "chatgpt", "software", "app",
+    "update", "hack", "cyber",
+    "server", "laptop", "pc", "tech"
+]
+
+# ==============================
+# PRICE FUNCTIONS
+# ==============================
+def get_gold_silver():
+    try:
+        url = f"https://www.goldapi.io/api/XAU/INR"
+        headers = {"x-access-token": GOLD_API_KEY}
+        res = requests.get(url, headers=headers, timeout=10)
+        data = res.json()
+
+        gold_price = round(data["price"] / 31.1035, 2)  # per gram
+    except:
+        gold_price = "N/A"
+
+    try:
+        url = f"https://www.goldapi.io/api/XAG/INR"
+        headers = {"x-access-token": GOLD_API_KEY}
+        res = requests.get(url, headers=headers, timeout=10)
+        data = res.json()
+
+        silver_price = round(data["price"] / 31.1035, 2)  # per gram
+    except:
+        silver_price = "N/A"
+
+    return gold_price, silver_price
+
+
+def get_usd_inr():
+    try:
+        url = "https://api.exchangerate.host/latest?base=USD&symbols=INR"
+        res = requests.get(url, timeout=10)
+        data = res.json()
+        return round(data["rates"]["INR"], 2)
+    except:
+        return "N/A"
+
+
+# ==============================
+# NEWS FUNCTIONS
+# ==============================
+def filter_news(headlines):
+    clean_news = []
+
+    for headline in headlines:
+        text = headline.lower()
+
+        if "****" in text:
+            continue
+
+        if not any(word in text for word in ALLOWED_KEYWORDS):
+            continue
+
+        if any(word in text for word in BLOCKED_KEYWORDS):
+            continue
+
+        clean_news.append(headline)
+
+    return clean_news[:3]
+
 
 def get_market_news():
     try:
-        url = (
-            "https://newsapi.org/v2/everything?"
-            "q=gold OR silver commodity&"
-            "language=en&sortBy=publishedAt&pageSize=1&"
-            f"apiKey={NEWS_API_KEY}"
-        )
-        r = requests.get(url, timeout=10)
-        data = r.json()
-        articles = data.get("articles", [])
-        if articles:
-            return "📰 " + articles[0]["title"]
+        url = f"https://newsapi.org/v2/top-headlines?category=business&language=en&apiKey={NEWS_API_KEY}"
+        res = requests.get(url, timeout=10)
+        data = res.json()
+
+        headlines = []
+        for article in data.get("articles", [])[:10]:
+            if article.get("title"):
+                headlines.append(article["title"])
+
+        news = filter_news(headlines)
+
+        if news:
+            return "\n".join([f"• {n}" for n in news])
+        else:
+            return "📰 No major economic news."
+
     except:
-        pass
+        return "📰 News unavailable."
 
-    return "📰 No major gold/silver news."
 
-# -------------------------------
-# WHATSAPP
-# -------------------------------
+# ==============================
+# WHATSAPP FUNCTION
+# ==============================
 def send_whatsapp(message):
     try:
-        twilio_client.messages.create(
+        client = Client(TWILIO_SID, TWILIO_TOKEN)
+        client.messages.create(
             body=message,
-            from_=FROM_WHATSAPP,
-            to=TO_WHATSAPP
+            from_=TWILIO_FROM,
+            to=TWILIO_TO
         )
-        print("📲 WhatsApp sent")
+        print("Message sent")
     except Exception as e:
-        print("❌ WhatsApp error:", e)
+        print("WhatsApp error:", e)
 
-# -------------------------------
-# FX RATE
-# -------------------------------
-def get_usd_to_inr():
-    r = requests.get(FX_API, timeout=10)
-    r.raise_for_status()
-    return r.json()["rates"]["INR"]
 
-# -------------------------------
-# METAL PRICE WITH RETRY
-# -------------------------------
-def get_metal_price_inr(symbol, fx_rate):
-    url = f"{METAL_API}/{symbol}"
+# ==============================
+# MAIN FUNCTION
+# ==============================
+def main():
+    gold, silver = get_gold_silver()
+    usd_inr = get_usd_inr()
+    news = get_market_news()
 
-    for attempt in range(3):
-        try:
-            r = requests.get(url, timeout=10)
-            r.raise_for_status()
-            return r.json()["price"] * fx_rate
-        except Exception as e:
-            print(f"Retry {attempt+1} for {symbol}:", e)
-            time.sleep(2)
+    now = datetime.now().strftime("%d %b %Y | %I:%M %p")
 
-    raise Exception(f"Failed to fetch {symbol}")
+    message = f"""
+🟡 Gold & Silver Update
 
-# -------------------------------
-# CALCULATIONS
-# -------------------------------
-def calculate_prices(price_oz_inr):
-    price_g = price_oz_inr / TROY_OUNCE_TO_GRAM
-    india_price = price_g * INDIA_LANDED_FACTOR
-    return round(price_g, 2), round(india_price, 2)
+Gold: ₹{gold} / g
+Silver: ₹{silver} / g
+USD/INR: ₹{usd_inr}
 
-# -------------------------------
-# FETCH ALL PRICES
-# -------------------------------
-def fetch_all_prices():
-    fx_rate = get_usd_to_inr()
-    prices = {}
+📰 Economic News:
+{news}
 
-    for metal, symbol in METALS.items():
-        price_oz = get_metal_price_inr(symbol, fx_rate)
-        price_g, india_price = calculate_prices(price_oz)
+⏰ Time: {now}
+"""
 
-        prices[metal] = {
-            "oz": round(price_oz, 2),
-            "gram": price_g,
-            "india": india_price
-        }
+    send_whatsapp(message)
 
-    return prices, fx_rate
 
-# -------------------------------
-# ALERTS
-# -------------------------------
-def process_alerts(prices):
-    global LAST_PRICES
-
-    for metal in THRESHOLD_METALS:
-        data = prices.get(metal)
-        if not data:
-            continue
-
-        current = data["india"]
-        previous = LAST_PRICES.get(metal)
-
-        if previous is not None:
-            diff = current - previous
-
-            if abs(diff) >= PRICE_CHANGE_THRESHOLD:
-                news = get_market_news()
-                other = "Silver" if metal == "Gold" else "Gold"
-                other_price = prices.get(other, {}).get("india", "N/A")
-
-                msg = (
-                    f"🟡 {metal} Alert\n"
-                    f"Now: ₹{current} / g\n"
-                    f"Change: ₹{round(diff, 2)}\n"
-                    f"{other}: ₹{other_price} / g\n\n"
-                    f"{news}"
-                )
-                send_whatsapp(msg)
-
-        LAST_PRICES[metal] = current
-
-# -------------------------------
-# SNAPSHOT (GITHUB HOURLY)
-# -------------------------------
-def whatsapp_snapshot(prices):
-    msg = "🟡 Gold & Silver Rate Snapshot\n\n"
-
-    gold = prices.get("Gold")
-    if gold:
-        msg += (
-            "Gold\n"
-            f"Spot(g): ₹{gold['gram']}\n"
-            f"India: ₹{gold['india']}\n\n"
-        )
-
-    silver = prices.get("Silver")
-    if silver:
-        msg += f"Silver: ₹{silver['india']} / g\n\n"
-
-    msg += get_market_news()
-    send_whatsapp(msg)
-
-# -------------------------------
-# GITHUB RUN
-# -------------------------------
-def run_once():
-    try:
-        prices, fx = fetch_all_prices()
-        process_alerts(prices)
-        whatsapp_snapshot(prices)
-    except Exception as e:
-        send_whatsapp(f"❌ Agent error: {str(e)}")
-
-# -------------------------------
-# START
-# -------------------------------
 if __name__ == "__main__":
-    run_once()
+    main()
