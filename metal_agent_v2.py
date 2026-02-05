@@ -45,10 +45,10 @@ def get_gold_silver():
     silver_price = "N/A"
     usd_inr = None
 
-    # Get USD/INR
+    # Get USD/INR (working free API)
     try:
         fx = requests.get(
-            "https://api.exchangerate.host/latest?base=USD&symbols=INR",
+            "https://api.exchangerate-api.com/v4/latest/USD",
             timeout=10
         ).json()
         usd_inr = fx["rates"]["INR"]
@@ -78,7 +78,6 @@ def get_gold_silver():
         pass
 
     return gold_price, silver_price, usd_inr
-
 
 # ==============================
 # NEWS FUNCTIONS
@@ -173,3 +172,4 @@ USD/INR: ₹{usd_inr_display}
 
 if __name__ == "__main__":
     main()
+
