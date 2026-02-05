@@ -257,12 +257,7 @@ def run_agent():
 # RUNNER (GITHUB)
 # -------------------------------
 def run_once():
-    try:
-        prices, fx = fetch_all_prices()
-        process_alerts(prices)
-        whatsapp_snapshot_force(prices)
-    except Exception as e:
-        send_whatsapp(f"❌ Agent error: {str(e)}")
+    send_whatsapp("🚨 GitHub test after secret reset")
 
 
 # -------------------------------
@@ -274,3 +269,4 @@ if __name__ == "__main__":
         run_once()
     else:
         run_agent()
+
