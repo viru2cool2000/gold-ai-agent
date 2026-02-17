@@ -47,9 +47,9 @@ def get_gold_silver():
 
     # India retail markup
     IMPORT_DUTY = 1.06
-    GST = 1.03
+    Bank_Charge = 1.005
 
-    TOTAL_MARKUP = IMPORT_DUTY * GST
+    TOTAL_MARKUP = IMPORT_DUTY * Bank_Charge
 
     # Get USD/INR
     try:
@@ -180,6 +180,7 @@ USD/INR: ₹{usd_inr_display}
 
 if __name__ == "__main__":
     main()
+
 
 
 
