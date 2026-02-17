@@ -48,6 +48,7 @@ def get_gold_silver():
     # India retail markup
     IMPORT_DUTY = 1.06
     Bank_Charge = 1.005
+    Trasport = 135
 
     TOTAL_MARKUP = IMPORT_DUTY * Bank_Charge
 
@@ -68,7 +69,7 @@ def get_gold_silver():
         gold_usd_per_oz = data["price"]
 
         if usd_inr:
-            base_gold = (gold_usd_per_oz * usd_inr) / 31.1035
+            base_gold = ((gold_usd_per_oz + Transport) * usd_inr) / 31.1035
             gold_price = round(base_gold * TOTAL_MARKUP, 2)
     except:
         pass
@@ -180,6 +181,7 @@ USD/INR: ₹{usd_inr_display}
 
 if __name__ == "__main__":
     main()
+
 
 
 
